@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCHIELD - Real Time Monitoring System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+    <script>
+        tailwind.config = { theme: { extend: { colors: { 'sd': '#233D4D', 'so': '#FE7F2D', 'sbg': '#F0F2F5', 'scard': '#FFFFFF', 'sborder': '#C8CDD3' }, fontFamily: { 'pixel': ['"Press Start 2P"', 'cursive'], 'mono': ['"Space Mono"', 'monospace'] } } } }
+    </script>
+    <style>
+        :root { 
+          --so: #FE7F2D;
+          --sd: #233D4D;
+          --sbg: #F0F2F5;
+          --scard: #FFFFFF;
+          --sborder: #C8CDD3;
+          --td: #1A2332;
+          --tm: #4A5568;
+          --tl: #718096; 
+        }
+
+        * {
+          box-sizing: border-box;
+          margin: 0;
+          padding: 0;
+        }
+
+        body {
+          background: var(--sbg);
+          overflow-x: hidden;
+          color: var(--td);
+        }
+
+        body::after {
+          content: '';
+          position: fixed;
+          top: 0; left: 0;
+          width: 100%; height: 100%;
+          background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,.015) 3px, rgba(0,0,0,.015) 6px);
+          pointer-events: none;
+          z-index: 9999;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #E2E6EA; }
+        ::-webkit-scrollbar-thumb { background: var(--so); }
+
+        /* Retro Borders & Components */
+        .pixel-border { border: 3px solid var(--sd); box-shadow: 4px 4px 0px var(--sd); }
+        .pixel-border-orange { border: 3px solid var(--so); box-shadow: 4px 4px 0px var(--so); }
+        .pixel-border-dark { border: 2px solid var(--sborder); box-shadow: 3px 3px 0px #B0B7BF; }
+
+        .btn-retro {
+          font-family: 'Press Start 2P', cursive;
+          font-size: 10px;
+          padding: 10px 18px;
+          background: var(--so);
+          color: #fff;
+          border: none;
+          box-shadow: 4px 4px 0px #b3561a;
+          cursor: pointer;
+          transition: all .1s;
+          text-transform: uppercase;
+        }
+        .btn-retro:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0px #b3561a; color: #fff; }
+        .btn-retro:active { transform: translate(4px, 4px); box-shadow: none; }
+
+        .btn-retro-outline {
+          font-family: 'Press Start 2P', cursive;
+          font-size: 9px;
+          padding: 8px 14px;
+          background: transparent;
+          color: var(--sd);
+          border: 2px solid var(--sd);
+          cursor: pointer;
+          transition: all .15s;
+        }
+        .btn-retro-outline:hover { background: var(--sd); color: #fff; }
+        .btn-retro-outline.active { background: var(--so); color: #fff; border-color: var(--so); box-shadow: 3px 3px 0px #b3561a; }
+
+        /* Select Retro */
+        select.retro-select {
+          background: #fff;
+          color: var(--td);
+          border: 2px solid var(--sd);
+          padding: 10px 14px;
+          font-family: 'Space Mono', monospace;
+          font-size: 12px;
+          width: 100%;
+          cursor: pointer;
+          appearance: none;
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23233D4D' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+          background-repeat: no-repeat;
+          background-position: right 12px center;
+        }
+        select.retro-select:focus { outline: none; box-shadow: 0 0 0 3px var(--so); }
+
+        /* Layout & Sections */
+        .page-section { display: none; }
+        .page-section.active { display: block; animation: fadeIn .3s ease; }
+
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        .grid-bg {
+          background-image: linear-gradient(rgba(35,61,77,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(35,61,77,.05) 1px, transparent 1px);
+          background-size: 32px 32px;
+        }
+
+        /* --- PERBAIKAN UTAMA: MAP & LEAFLET --- */
+        .leaflet-container {
+          background: #E8ECF0 !important;
+          font-family: 'Space Mono', monospace !important;
+          width: 100% !important;
+          height: 100% !important;
+          min-height: 400px;
+          max-width: 100%;
+          position: relative;
+          z-index: 1;
+        }
+
+        .school-label {
+          background: rgba(255,255,255,.95) !important;
+          color: var(--sd) !important;
+          border: 2px solid var(--so) !important;
+          border-radius: 0 !important;
+          font-family: 'Press Start 2P', cursive !important;
+          font-size: 7px !important;
+          padding: 3px 6px !important;
+          white-space: nowrap !important;
+          box-shadow: 2px 2px 0px rgba(0,0,0,.15) !important;
+        }
+        .school-label::before { display: none !important; }
+
+        .leaflet-control-zoom a { background: #fff !important; color: var(--sd) !important; border: 2px solid var(--sd) !important; font-family: 'Press Start 2P', cursive !important; }
+        .leaflet-control-zoom a:hover { background: var(--so) !important; color: #fff !important; }
+        .leaflet-control-attribution { display: none !important; }
+
+        /* Risk Bar & Utilities */
+        .risk-bar-track { background: #E2E6EA; height: 28px; border: 2px solid var(--sborder); position: relative; overflow: hidden; }
+        .risk-bar-fill { height: 100%; transition: width .8s ease, background .5s ease; }
+        .risk-indicator { position: relative; overflow: hidden; }
+
+        /* Glitch Effect */
+        .glitch-text { position: relative; }
+        .glitch-text::before, .glitch-text::after { content: attr(data-text); position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .glitch-text::before { color: var(--so); animation: glitch1 4s infinite; clip-path: inset(0 0 80% 0); }
+        .glitch-text::after { color: #B0B7BF; animation: glitch2 4s infinite; clip-path: inset(80% 0 0 0); }
+
+        @keyframes glitch1 { 0%, 93%, 100% { transform: translate(0); } 94% { transform: translate(-3px, 1px); } 96% { transform: translate(3px, -1px); } }
+        @keyframes glitch2 { 0%, 93%, 100% { transform: translate(0); } 95% { transform: translate(3px, 1px); } 97% { transform: translate(-3px, -1px); } }
+
+        .card-hover { transition: transform .2s, box-shadow .2s; }
+        .card-hover:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px var(--so); }
+
+        .toast {
+          position: fixed; bottom: 30px; right: 30px;
+          background: var(--sd); border: 2px solid var(--so); color: #fff;
+          padding: 16px 24px; font-family: 'Space Mono', monospace;
+          z-index: 10000; transform: translateY(100px); opacity: 0; transition: all .4s ease;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
+        .live-dot { animation: blink 1.2s infinite; }
+
+        /* Navbar Top Fixed */
+        .navbar-top { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; background: var(--sd); border-bottom: 3px solid var(--so); }
+        .main-content { padding-top: 140px; min-height: calc(100vh - 140px); }
+
+        .navbar-top a.nav-link { color: #CBD5E0; text-decoration: none; font-family: 'Space Mono', monospace; font-size: 12px; padding: 8px 14px; transition: all .2s; display: flex; align-items: center; gap: 6px; border-bottom: 3px solid transparent; cursor: pointer; }
+        .navbar-top a.nav-link:hover { color: var(--so); border-bottom-color: var(--so); }
+        .navbar-top a.nav-link.active { color: var(--so); border-bottom-color: var(--so); font-weight: 700; }
+
+        /* Mobile Navigation */
+        .mobile-menu { display: none; }
+        .mobile-nav-panel { position: fixed; top: 0; left: -100%; width: 280px; height: 100vh; background: var(--sd); z-index: 2000; transition: left .3s; padding-top: 20px; border-right: 3px solid var(--so); }
+        .mobile-nav-panel.open { left: 0; }
+        .mobile-nav-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,.5); z-index: 1500; }
+        .mobile-nav-overlay.show { display: block; }
+        .mobile-nav-panel a { display: flex; align-items: center; gap: 12px; padding: 14px 20px; color: #CBD5E0; text-decoration: none; font-family: 'Space Mono', monospace; font-size: 13px; border-left: 3px solid transparent; transition: all .2s; cursor: pointer; }
+        .mobile-nav-panel a:hover, .mobile-nav-panel a.active { background: rgba(254,127,45,.15); border-left-color: var(--so); color: var(--so); }
+
+        /* Grids */
+        .sim-param-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+        @media(max-width: 1100px) {
+          .desktop-nav { display: none !important; }
+          .mobile-menu { display: flex !important; }
+        }
+        @media(max-width: 640px) {
+          .sim-param-grid { grid-template-columns: 1fr; }
+          .main-content { padding-top: 160px; }
+        }
+    </style>
+</head>
+<body class="font-mono min-h-screen flex flex-col">
+    <div id="toast" class="toast"></div>
+    <div id="mobileNavOverlay" class="mobile-nav-overlay" onclick="closeMobileNav()"></div>
+    
+    <div id="mobileNavPanel" class="mobile-nav-panel">
+        <div class="px-5 pb-4 mb-4 border-b border-white/10 flex items-center gap-3">
+            <span class="font-pixel text-so text-xs">SCHIELD</span>
+        </div>
+        <a class="active" data-page="dashboard" onclick="switchPage('dashboard')"><i class="fas fa-map-marked-alt w-5 text-center"></i> Monitoring</a>
+        <a data-page="prediksi" onclick="switchPage('prediksi')"><i class="fas fa-route w-5 text-center"></i> Prediksi Arus</a>
+        <a data-page="simulasi" onclick="switchPage('simulasi')"><i class="fas fa-exclamation-triangle w-5 text-center"></i> Simulasi Risiko</a>
+        <a data-page="pelaporan" onclick="switchPage('pelaporan')"><i class="fas fa-bullhorn w-5 text-center"></i> Pelaporan</a>
+        <a data-page="edukasi" onclick="switchPage('edukasi')"><i class="fas fa-graduation-cap w-5 text-center"></i> Edukasi</a>
+        <a data-page="tentang" onclick="switchPage('tentang')"><i class="fas fa-shield-alt w-5 text-center"></i> Tentang</a>
+    </div>
+
+    <nav class="navbar-top">
+        <div class="max-w-7xl mx-auto px-4 md:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-3 flex-shrink-0">
+                    <div>
+                        <h1 class="font-pixel text-so text-xs md:text-sm leading-tight">SCHIELD</h1>
+                        <p class="text-[6px] md:text-[7px] font-pixel text-white/40 leading-tight">PERISAI DIGITAL</p>
+                    </div>
+                </div>
+                <div class="desktop-nav hidden md:flex items-center gap-0.5">
+                    <a class="nav-link active" data-page="dashboard" onclick="switchPage('dashboard')"><i class="fas fa-map-marked-alt"></i> Monitoring</a>
+                    <a class="nav-link" data-page="prediksi" onclick="switchPage('prediksi')"><i class="fas fa-route"></i> Prediksi Arus</a>
+                    <a class="nav-link" data-page="simulasi" onclick="switchPage('simulasi')"><i class="fas fa-exclamation-triangle"></i> Simulasi</a>
+                    <a class="nav-link" data-page="pelaporan" onclick="switchPage('pelaporan')"><i class="fas fa-bullhorn"></i> Pelaporan</a>
+                    <a class="nav-link" data-page="edukasi" onclick="switchPage('edukasi')"><i class="fas fa-graduation-cap"></i> Edukasi</a>
+                    <a class="nav-link" data-page="tentang" onclick="switchPage('tentang')"><i class="fas fa-shield-alt"></i> Tentang</a>
+                </div>
+                <button class="mobile-menu text-white text-xl ml-2 block md:hidden" onclick="openMobileNav()">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            <div class="flex items-center justify-between pb-3 border-t border-white/10 pt-2">
+                <div class="flex items-center gap-4">
+                    <span class="w-3 h-3 bg-green-400 rounded-full live-dot"></span>
+                    <span class="font-pixel text-so text-xs md:text-sm tracking-wider" id="activeTimeLabelNav">MEMUAT JAM...</span>
+                </div>
+                <div class="font-pixel text-white text-lg md:text-2xl tracking-widest" id="liveClock">00:00:00</div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-1 grid-bg main-content">
+        <div class="p-4 md:p-8 max-w-7xl mx-auto">
+
+            <section id="page-dashboard" class="page-section active">
+                <div class="mb-6">
+                    <h2 class="font-pixel text-base md:text-lg glitch-text" data-text="PETA KEPADATAN LALU LINTAS" style="color:var(--td)">PETA KEPADATAN LALU LINTAS</h2>
+                    <p class="text-sm mt-2" style="color:var(--tm)">Kota Tenggarong — Prediksi otomatis berdasarkan jam perangkat, hari, dan cuaca</p>
+                </div>
+                <div class="pixel-border bg-white p-1 mb-4">
+                    <div id="map" style="height:540px; width:100%"></div>
+                </div>
+                <div class="flex flex-wrap gap-4 md:gap-8 items-center mb-6 bg-white p-4 pixel-border-dark">
+                    <p class="font-pixel text-[8px] text-sd tracking-wider">LEGENDA:</p>
+                    <div class="flex items-center gap-2"><span class="w-8 h-2 bg-red-500 rounded-sm"></span><span class="text-xs">Tinggi</span></div>
+                    <div class="flex items-center gap-2"><span class="w-8 h-2 bg-yellow-500 rounded-sm"></span><span class="text-xs">Sedang</span></div>
+                    <div class="flex items-center gap-2"><span class="w-8 h-2 bg-green-500 rounded-sm"></span><span class="text-xs">Rendah</span></div>
+                    <div class="flex items-center gap-2"><i class="fas fa-school text-so text-sm"></i><span class="text-xs">Sekolah</span></div>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div class="bg-white p-4 pixel-border-dark card-hover"><p class="font-pixel text-[7px] text-red-500 mb-1">JALAN PADAT</p><p class="font-pixel text-xl text-red-500" id="statTinggi">0</p></div>
+                    <div class="bg-white p-4 pixel-border-dark card-hover"><p class="font-pixel text-[7px] text-yellow-500 mb-1">JALAN SEDANG</p><p class="font-pixel text-xl text-yellow-500" id="statSedang">0</p></div>
+                    <div class="bg-white p-4 pixel-border-dark card-hover"><p class="font-pixel text-[7px] text-green-500 mb-1">JALAN LANCAR</p><p class="font-pixel text-xl text-green-500" id="statRendah">0</p></div>
+                    <div class="bg-white p-4 pixel-border-dark card-hover"><p class="font-pixel text-[7px] text-so mb-1">TOTAL SEKOLAH</p><p class="font-pixel text-xl text-so" id="statSekolah">0</p></div>
+                </div>
+            </section>
+
+            <section id="page-prediksi" class="page-section">
+                <div class="mb-6">
+                    <p class="font-pixel text-[9px] text-so tracking-widest mb-2">// TRAFFIC FLOW PREDICTION</p>
+                    <h2 class="font-pixel text-base md:text-lg glitch-text" data-text="PREDIKSI ARUS LALU LINTAS" style="color:var(--td)">PREDIKSI ARUS LALU LINTAS</h2>
+                    <p class="text-sm mt-2" style="color:var(--tm)">Simulasi prediksi berdasarkan dataset, jenis hari, dan kondisi cuaca</p>
+                </div>
+
+                <div class="bg-white p-5 pixel-border-orange mb-6">
+                    <p class="font-pixel text-[8px] text-so mb-4 tracking-wider">PARAMETER PREDIKSI:</p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div>
+                            <label class="text-[11px] font-bold mb-2 block"><i class="fas fa-clock text-so mr-1"></i> Periode Waktu</label>
+                            <select class="retro-select" id="predTimeSelect" onchange="runPrediction()">
+                                <option value="morning">06:00 - 08:30 (Berangkat)</option>
+                                <option value="midday">12:00 - 13:30 (Istirahat)</option>
+                                <option value="afternoon">15:00 - 18:00 (Pulang)</option>
+                                <option value="night">19:00 - 23:00 (Hangout)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[11px] font-bold mb-2 block"><i class="fas fa-calendar-alt text-so mr-1"></i> Jenis Hari</label>
+                            <select class="retro-select" id="predDayType" onchange="runPrediction()">
+                                <option value="kerja">Hari Kerja / Sekolah</option>
+                                <option value="libur_nasional">Hari Libur Nasional</option>
+                                <option value="libur_sekolah">Libur Sekolah (Weekend/Umum)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[11px] font-bold mb-2 block"><i class="fas fa-cloud-sun text-so mr-1"></i> Kondisi Cuaca</label>
+                            <select class="retro-select" id="predWeather" onchange="runPrediction()">
+                                <option value="cerah">Cerah / Mendung</option>
+                                <option value="hujan">Hujan Ringan / Sedang</option>
+                                <option value="badai">Hujan Lebat / Berkabut</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+                    <div class="lg:col-span-3 pixel-border bg-white p-1">
+                        <div id="predMap" style="height:500px; width:100%"></div>
+                    </div>
+                    <div class="flex flex-col gap-3">
+                        <div class="bg-white p-4 pixel-border-dark"><p class="font-pixel text-[7px] text-so mb-1">VOLUME RATA-RATA</p><p class="font-pixel text-lg text-sd" id="predAvgVol">0</p><p class="text-[10px]" style="color:var(--tl)">kendaraan/jam</p></div>
+                        <div class="bg-white p-4 pixel-border-dark"><p class="font-pixel text-[7px] text-so mb-1">KECEPATAN RATA-RATA</p><p class="font-pixel text-lg text-sd" id="predAvgSpd">0</p><p class="text-[10px]" style="color:var(--tl)">km/jam</p></div>
+                        <div class="bg-white p-4 pixel-border-dark"><p class="font-pixel text-[7px] text-so mb-1">TINGKAT KEPADATAN</p><p class="font-pixel text-lg" id="predDensityLevel" style="color:#22C55E">RENDAH</p></div>
+                        <div class="bg-white p-4 pixel-border-dark"><p class="font-pixel text-[7px] text-so mb-1">JALAN KRITIS</p><p class="font-pixel text-lg text-red-500" id="predCritical">0</p><p class="text-[10px]" style="color:var(--tl)">ruas macet total</p></div>
+                        <div class="bg-white p-4 pixel-border-dark"><p class="font-pixel text-[7px] text-so mb-1">ARUS DOMINAN</p><p class="font-pixel text-[9px] text-sd mt-1" id="predDominant">-</p></div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 pixel-border"><p class="font-pixel text-[9px] text-so mb-4 tracking-wider">VOLUME KENDARAAN PER RUAS</p><div style="height:320px"><canvas id="predBarChart"></canvas></div></div>
+                    <div class="bg-white p-6 pixel-border"><p class="font-pixel text-[9px] text-so mb-4 tracking-wider">DETAIL PERHITUNGAN</p><div class="overflow-x-auto max-h-[320px] overflow-y-auto"><table class="w-full text-[10px]"><thead class="sticky top-0 bg-white"><tr class="border-b-2 border-so"><th class="pb-2 font-pixel text-[6px] text-so text-left">JALAN</th><th class="pb-2 font-pixel text-[6px] text-so text-right">VOL</th><th class="pb-2 font-pixel text-[6px] text-so text-right">SPD</th><th class="pb-2 font-pixel text-[6px] text-so text-right">DENS</th><th class="pb-2 font-pixel text-[6px] text-so text-left">STATUS</th></tr></thead><tbody id="predTable"></tbody></table></div></div>
+                </div>
+            </section>
+
+            <section id="page-simulasi" class="page-section">
+                <div class="mb-6"><p class="font-pixel text-[9px] text-so tracking-widest mb-2">// ANALISIS RISIKO</p><h2 class="font-pixel text-base md:text-lg glitch-text" data-text="SIMULASI RISIKO KECELAKAAN" style="color:var(--td)">SIMULASI RISIKO KECELAKAAN</h2></div>
+                <div class="bg-white p-6 md:p-8 pixel-border-orange mb-6">
+                    <div class="flex flex-col md:flex-row items-center gap-6 md:gap-10">
+                        <div class="risk-indicator flex-shrink-0 w-44 h-44 md:w-52 md:h-52 border-4 flex flex-col items-center justify-center" id="riskCircle" style="border-color:#22C55E; background:rgba(34,197,94,.06)"><p class="font-pixel text-3xl md:text-4xl" id="riskPercent" style="color:#22C55E">0%</p><p class="font-pixel text-[9px] md:text-xs mt-2 text-center" id="riskLabel" style="color:#22C55E">SANGAT AMAN</p></div>
+                        <div class="flex-1 w-full"><p class="font-pixel text-[9px] text-so mb-3 tracking-wider">TINGKAT RISIKO</p><div class="risk-bar-track mb-5"><div class="risk-bar-fill" id="riskBarFill" style="width:0%; background:#22C55E"></div></div><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><p class="font-pixel text-[8px] text-so mb-2 tracking-wider">FAKTOR RISIKO UTAMA</p><div id="riskFactors" class="space-y-1.5 text-xs" style="color:var(--tm)"><p style="color:var(--tl)">Tidak ada faktor risiko.</p></div></div><div><p class="font-pixel text-[8px] text-so mb-2 tracking-wider">REKOMENDASI TINDAKAN</p><div id="recommendations" class="space-y-1.5 text-xs" style="color:var(--tm)"><p style="color:var(--tl)">Kondisi aman.</p></div></div></div></div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                    <div class="lg:col-span-3 bg-white p-6 pixel-border"><p class="font-pixel text-[9px] text-so mb-5 tracking-wider">PARAMETER KONDISI JALAN</p><div class="sim-param-grid"><div><label class="text-[11px] font-bold mb-2 block"><i class="fas fa-traffic-light text-so mr-1"></i> Rambu Lalu Lintas</label><select class="retro-select" id="paramRambu" onchange="calculateRisk()"><option value="0">Lengkap & Terlihat</option><option value="35">Sebagian Rusak</option><option value="70">Banyak Hilang</option></select></div><div><label class="text-[11px] font-bold mb-2 block"><i class="fas fa-road text-so mr-1"></i> Permukaan Jalan</label><select class="retro-select" id="paramJalan" onchange="calculateRisk()"><option value="0">Baik & Halus</option><option value="30">Berlubang</option><option value="65">Rusak Parah</option></select></div><div><label class="text-[11px] font-bold mb-2 block"><i class="fas fa-lightbulb text-so mr-1"></i> Pencahayaan Jalan</label><select class="retro-select" id="paramCahaya" onchange="calculateRisk()"><option value="0">Baik</option><option value="25">Kurang</option><option value="55">Tidak Ada</option></select></div><div><label class="text-[11px] font-bold mb-2 block"><i class="fas fa-walking text-so mr-1"></i> Fasilitas Pejalan Kaki</label><select class="retro-select" id="paramPedestrian" onchange="calculateRisk()"><option value="0">Ada & Lengkap</option><option value="30">Sebagian Ada</option><option value="60">Tidak Ada</option></select></div><div><label class="text-[11px] font-bold mb-2 block"><i class="fas fa-paint-roller text-so mr-1"></i> Zebra Cross</label><select class="retro-select" id="paramZebra" onchange="calculateRisk()"><option value="0">Tersedia</option><option value="25">Sebagian</option><option value="55">Tidak Ada</option></select></div><div><label class="text-[11px] font-bold mb-2 block"><i class="fas fa-tachometer-alt text-so mr-1"></i> Kecepatan Kendaraan</label><select class="retro-select" id="paramKecepatan" onchange="calculateRisk()"><option value="0">Rendah</option><option value="30">Sedang</option><option value="60">Tinggi</option></select></div></div></div>
+                    <div class="lg:col-span-2 bg-white p-6 pixel-border flex flex-col"><p class="font-pixel text-[9px] text-so mb-4 tracking-wider">PROFIL RISIKO</p><div class="flex-1 min-h-[280px]"><canvas id="riskRadar"></canvas></div></div>
+                </div>
+            </section>
+
+            <section id="page-pelaporan" class="page-section">
+                <div class="mb-6"><p class="font-pixel text-[9px] text-so tracking-widest mb-2">// LAPORAN MASYARAKAT</p><h2 class="font-pixel text-base md:text-lg glitch-text" data-text="PELAPORAN FASILITAS JALAN" style="color:var(--td)">PELAPORAN FASILITAS JALAN</h2></div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8"><div class="bg-white p-5 pixel-border-dark card-hover"><div class="w-12 h-12 bg-sd flex items-center justify-center mb-4"><i class="fas fa-traffic-light text-so text-xl"></i></div><h3 class="font-pixel text-[9px] text-so mb-2">RAMBU HILANG</h3><p class="text-xs leading-relaxed" style="color:var(--tm)">Rambu lalu lintas yang hilang</p></div><div class="bg-white p-5 pixel-border-dark card-hover"><div class="w-12 h-12 bg-sd flex items-center justify-center mb-4"><i class="fas fa-road text-so text-xl"></i></div><h3 class="font-pixel text-[9px] text-so mb-2">FASILITAS RUSAK</h3><p class="text-xs leading-relaxed" style="color:var(--tm)">Jalan berlubang, marka pudar</p></div><div class="bg-white p-5 pixel-border-dark card-hover"><div class="w-12 h-12 bg-sd flex items-center justify-center mb-4"><i class="fas fa-exclamation-circle text-so text-xl"></i></div><h3 class="font-pixel text-[9px] text-so mb-2">TITIK BAHAYA</h3><p class="text-xs leading-relaxed" style="color:var(--tm)">Titik rawan kecelakaan</p></div></div>
+                <div class="bg-white p-8 text-center mb-8 pixel-border-orange"><i class="fas fa-clipboard-list text-so text-4xl mb-4"></i><h3 class="font-pixel text-sm mb-3" style="color:var(--sd)">LAPORKAN SEKARANG</h3><p class="text-sm mb-6 max-w-lg mx-auto leading-relaxed" style="color:var(--tm)">Bantu kami memetakan fasilitas jalan yang perlu perbaikan.</p><a href="https://docs.google.com/forms/d/e/1FAIpQLSeEJ1IATifFj-NjHrbKk4f259Re5HoB7w6JOer5kF7ZQ4hksA/viewform?usp=header" target="_blank" rel="noopener noreferrer" class="btn-retro inline-block"><i class="fas fa-external-link-alt mr-2"></i>BUKA FORM PELAPORAN</a></div>
+                <div class="bg-white p-6 pixel-border"><p class="font-pixel text-[9px] text-so mb-4 tracking-wider">LAPORAN TERKINI</p><div class="overflow-x-auto"><table class="w-full text-xs"><thead><tr class="border-b-2 border-so text-left"><th class="pb-3 font-pixel text-[7px] text-so">ID</th><th class="pb-3 font-pixel text-[7px] text-so">LOKASI</th><th class="pb-3 font-pixel text-[7px] text-so">JENIS</th><th class="pb-3 font-pixel text-[7px] text-so">STATUS</th><th class="pb-3 font-pixel text-[7px] text-so">TANGGAL</th></tr></thead><tbody id="reportTable"></tbody></table></div></div>
+            </section>
+
+            <section id="page-edukasi" class="page-section">
+                <div class="mb-6"><p class="font-pixel text-[9px] text-so tracking-widest mb-2">// PEMBELAJARAN</p><h2 class="font-pixel text-base md:text-lg glitch-text" data-text="EDUKASI KESALEMATAN LALU LINTAS" style="color:var(--td)">EDUKASI KESALEMATAN LALU LINTAS</h2></div>
+                <div class="mb-8"><p class="font-pixel text-[9px] text-so mb-4 tracking-wider">VIDEO EDUKASI</p><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div class="bg-white pixel-border-dark overflow-hidden card-hover"><div class="aspect-video"><iframe width="100%" height="100%" src="https://www.youtube.com/embed/3a4L1gYiRJc" frameborder="0" allowfullscreen style="border:none"></iframe></div><div class="p-4"><h4 class="font-pixel text-[8px] text-so mb-1">KESALEMATAN JALAN RAYA</h4></div></div><div class="bg-white pixel-border-dark overflow-hidden card-hover"><div class="aspect-video"><iframe width="100%" height="100%" src="https://www.youtube.com/embed/A-8eG6fVfKY" frameborder="0" allowfullscreen style="border:none"></iframe></div><div class="p-4"><h4 class="font-pixel text-[8px] text-so mb-1">MENGENAL RAMBU LALU LINTAS</h4></div></div></div></div>
+                <div class="mb-8"><p class="font-pixel text-[9px] text-so mb-4 tracking-wider">TIPS KESELAMATAN SISWA</p><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div class="bg-white p-5 pixel-border-dark flex gap-4 items-start card-hover"><div class="w-10 h-10 flex-shrink-0 bg-so flex items-center justify-center"><span class="font-pixel text-white text-sm">01</span></div><div><h4 class="font-pixel text-[8px] text-so mb-2">GUNAKAN TROTOAR</h4><p class="text-xs leading-relaxed" style="color:var(--tm)">Selalu berjalan di trotoar jika tersedia.</p></div></div><div class="bg-white p-5 pixel-border-dark flex gap-4 items-start card-hover"><div class="w-10 h-10 flex-shrink-0 bg-so flex items-center justify-center"><span class="font-pixel text-white text-sm">02</span></div><div><h4 class="font-pixel text-[8px] text-so mb-2">MENYEBERANG DENGAN AMAN</h4><p class="text-xs leading-relaxed" style="color:var(--tm)">Gunakan zebra cross atau jembatan penyeberangan.</p></div></div><div class="bg-white p-5 pixel-border-dark flex gap-4 items-start card-hover"><div class="w-10 h-10 flex-shrink-0 bg-so flex items-center justify-center"><span class="font-pixel text-white text-sm">03</span></div><div><h4 class="font-pixel text-[8px] text-so mb-2">PAKAI HELM & JAKET</h4><p class="text-xs leading-relaxed" style="color:var(--tm)">Gunakan helm SNI dan jaket saat berkendara.</p></div></div><div class="bg-white p-5 pixel-border-dark flex gap-4 items-start card-hover"><div class="w-10 h-10 flex-shrink-0 bg-so flex items-center justify-center"><span class="font-pixel text-white text-sm">04</span></div><div><h4 class="font-pixel text-[8px] text-so mb-2">PATUHI RAMBU</h4><p class="text-xs leading-relaxed" style="color:var(--tm)">Jangan menerobos lampu merah dan patuhi marka jalan.</p></div></div></div></div>
+            </section>
+
+            <section id="page-tentang" class="page-section">
+                <div class="mb-6"><p class="font-pixel text-[9px] text-so tracking-widest mb-2">// INFORMASI</p><h2 class="font-pixel text-base md:text-lg glitch-text" data-text="TENTANG SCHIELD" style="color:var(--td)">TENTANG SCHIELD</h2></div>
+                <div class="bg-white p-8 pixel-border mb-6">
+                    <div class="flex flex-col md:flex-row gap-8 items-start">
+                        <div>
+                            <h3 class="font-pixel text-sm text-so mb-4">SCHIELD</h3>
+                            <p class="text-sm leading-relaxed mb-4" style="color:var(--td)"><strong class="text-so">S</strong>chool safety <strong class="text-so">C</strong>ommunity <strong class="text-so">H</strong>azard <strong class="text-so">I</strong>ntelligency, <strong class="text-so">E</strong>valuation &, <strong class="text-so">L</strong>ocation</p>
+                            <p class="text-sm leading-relaxed" style="color:var(--tm)">Platform digital untuk meningkatkan keselamatan anak-anak di zona sekolah Kota Tenggarong dengan rule-based prediction yang mempertimbangkan waktu, jenis hari, dan kondisi cuaca.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+<!-- ==================== SCRIPT FULL SCHIELD + TOMTOM REAL-TIME ==================== -->
+<script>
+    // 1. MASUKKAN API KEY TOMTOM KAMU DI SINI
+    const TOMTOM_KEY = 'YqqAj5hTNkkTyWFw00B7SPymLulSwsP8';
+
+    // 2. DATA RUAS JALAN (Lengkap dengan koordinat & titik acuan 'point' untuk TomTom API)
+   const roadSegments = [
+  {
+    name: "Jl. Mulawarman",
+    activeDensity: "low",
+    point: "-0.4103498,116.9884807",
+    baseVol: 820,
+    coords: [
+      [-0.4128112, 116.9884744],
+      [-0.4114345, 116.988475],
+      [-0.4109647, 116.9884621],
+      [-0.4103498, 116.9884807],
+      [-0.4092833, 116.9884374],
+      [-0.409275, 116.988437]
+    ]
+  },
+  {
+    name: "Jl. Jend. Sudirman",
+    activeDensity: "low",
+    point: "-0.4165841,116.991037",
+    baseVol: 950,
+    coords: [
+      [-0.415467, 116.9904213],
+      [-0.4155615, 116.9905258],
+      [-0.4165841, 116.991037],
+      [-0.4173465, 116.9913409],
+      [-0.419204, 116.9917667]
+    ]
+  },
+  {
+    name: "Jl. KH Dewantara",
+    activeDensity: "low",
+    point: "-0.4116662,116.9855835",
+    baseVol: 550,
+    coords: [
+      [-0.4128334, 116.9884642],
+      [-0.412656, 116.9879458],
+      [-0.4120985, 116.9866337],
+      [-0.4116662, 116.9855835],
+      [-0.4106894, 116.9831342],
+      [-0.4106899, 116.9831226]
+    ]
+  },
+  {
+    name: "Jl. KH Ahmad Muksin",
+    activeDensity: "low",
+    point: "-0.4295151,116.9946992",
+    baseVol: 680,
+    coords: [
+      [-0.4191747, 116.9917483],
+      [-0.4220813, 116.992304],
+      [-0.4234132, 116.9926301],
+      [-0.4238916, 116.9928921],
+      [-0.4247225, 116.9934023],
+      [-0.4248673, 116.9934604],
+      [-0.4253898, 116.9935666],
+      [-0.428691, 116.9944676],
+      [-0.4289461, 116.9945148],
+      [-0.4295151, 116.9946992],
+      [-0.429514, 116.9946867],
+      [-0.4294605, 116.9946604],
+      [-0.4327229, 116.9957609],
+      [-0.43351, 116.9960106],
+      [-0.4343482, 116.9962636],
+      [-0.4351731, 116.996545],
+      [-0.4358612, 116.9968732],
+      [-0.4377994, 116.997738]
+    ]
+  },
+  {
+    name: "Jl. Diponegoro",
+    activeDensity: "low",
+    point: "-0.4122,116.9911",
+    baseVol: 520,
+    coords: [
+  [-0.4149031, 116.9912432],
+  [-0.4148357, 116.9912867],
+  [-0.4147328, 116.991297],
+  [-0.4146135, 116.9912535],
+  [-0.4141014, 116.9912192],
+  [-0.4138079, 116.9912015],
+  [-0.4136748, 116.9911845],
+  [-0.4134386, 116.9911622],
+  [-0.4132357, 116.9911382],
+  [-0.4129189, 116.9910935],
+  [-0.4125926, 116.9910592],
+  [-0.412184, 116.9909882],
+  [-0.4118444, 116.9909339],
+  [-0.4113777, 116.9908582],
+  [-0.4109079, 116.9907842],
+  [-0.410544, 116.9907271],
+  [-0.4101726, 116.9906712],
+  [-0.4098199, 116.9906192],
+  [-0.4094915, 116.9905719],
+  [-0.4092497, 116.9905393],
+  [-0.409146, 116.9905194]
+]
+  },
+  {
+    name: "Jl. Jend. Ahmad Yani",
+    activeDensity: "low",
+    point: "-0.4170,116.9886",
+    baseVol: 870,
+    coords: [
+  [-0.4203212, 116.9886192],
+  [-0.4165855, 116.9885364],
+  [-0.4163954, 116.9885563],
+  [-0.4161638, 116.9885552],
+  [-0.4157254, 116.9885575],
+  [-0.4152925, 116.988545],
+  [-0.4150703, 116.9885321],
+  [-0.4148139, 116.9885233],
+  [-0.4146527, 116.9885089]
+]
+  },
+  {
+    name: "Jl. Pesut",
+    activeDensity: "low",
+    point: "-0.4313243,116.984948",
+    baseVol: 680,
+    coords: [
+      [-0.4233173, 116.982942],
+      [-0.4237121, 116.9833994],
+      [-0.4240145, 116.9838533],
+      [-0.4242762, 116.9841252],
+      [-0.4248043, 116.9845328],
+      [-0.4252423, 116.9847958],
+      [-0.4254996, 116.9848618],
+      [-0.4258032, 116.9848458],
+      [-0.4260284, 116.9847805],
+      [-0.426412, 116.9845895],
+      [-0.4271367, 116.9840203],
+      [-0.4276936, 116.9836897],
+      [-0.4281156, 116.983456],
+      [-0.4282922, 116.9833934],
+      [-0.4284302, 116.9833741],
+      [-0.428557, 116.9833998],
+      [-0.4287175, 116.9834865],
+      [-0.4288908, 116.9835972],
+      [-0.4292042, 116.9838069],
+      [-0.4297001, 116.984107],
+      [-0.4313243, 116.984948],
+      [-0.4329172, 116.9857274],
+      [-0.4346983, 116.9866204],
+      [-0.4369757, 116.9877888],
+      [-0.4382243, 116.9884083],
+      [-0.4427735, 116.9905972],
+      [-0.4443254, 116.9914434],
+      [-0.4447257, 116.991625],
+      [-0.4450848, 116.9917282],
+      [-0.4468702, 116.9923627],
+      [-0.4486357, 116.9930842],
+      [-0.4500064, 116.9936693],
+      [-0.450715, 116.994022],
+      [-0.4510858, 116.994144],
+      [-0.4520938, 116.9943243],
+      [-0.4525487, 116.9943864],
+      [-0.4527652, 116.9943464],
+      [-0.4528954, 116.9942562],
+      [-0.4531946, 116.9937373],
+      [-0.4533853, 116.9934528],
+      [-0.4540687, 116.9928396],
+      [-0.4543815, 116.9927647],
+      [-0.4559732, 116.9929458],
+      [-0.4569274, 116.993042]
+    ]
+  },
+  {
+    name: "Jl. KH Ahmad Dahlan",
+    activeDensity: "low",
+    point: "-0.4033288,116.9847276",
+    baseVol: 780,
+    coords: [
+      [-0.4085803, 116.9843035],
+      [-0.4085358, 116.9843129],
+      [-0.4081259, 116.984543],
+      [-0.4078285, 116.9846971],
+      [-0.4076941, 116.9847331],
+      [-0.4075767, 116.9847473],
+      [-0.4073864, 116.9847464],
+      [-0.4072113, 116.9847492],
+      [-0.406896, 116.9847265],
+      [-0.4067883, 116.9847161],
+      [-0.4064626, 116.9847066],
+      [-0.4061019, 116.9847011],
+      [-0.4057567, 116.984705],
+      [-0.4055213, 116.9847155],
+      [-0.4053737, 116.9847297],
+      [-0.4053291, 116.9847643],
+      [-0.404259, 116.9847729],
+      [-0.4035333, 116.984756],
+      [-0.4033288, 116.9847276],
+      [-0.4022152, 116.984711],
+      [-0.4018186, 116.9847073],
+      [-0.4012701, 116.9847205],
+      [-0.4002443, 116.9846874],
+      [-0.3998797, 116.9846817],
+      [-0.3993627, 116.9846581],
+      [-0.3989932, 116.9846478],
+      [-0.3986326, 116.9846304],
+      [-0.3982299, 116.9846053],
+      [-0.397243, 116.9846208],
+      [-0.3968121, 116.9846236],
+      [-0.3961087, 116.9846284],
+      [-0.3955645, 116.9846588],
+      [-0.3950455, 116.9846834],
+      [-0.3944728, 116.9847205],
+      [-0.3939685, 116.9847657],
+      [-0.3936438, 116.9847988],
+      [-0.3931118, 116.9848414]
+    ]
+  },
+  {
+    name: "Jl. Danau Aji",
+    activeDensity: "low",
+    point: "-0.4227061,116.9850019",
+    baseVol: 350,
+    coords: [
+      [-0.4232692, 116.98296],
+      [-0.4232194, 116.9831895],
+      [-0.4229707, 116.9840594],
+      [-0.4227061, 116.9850019],
+      [-0.422468, 116.9859437],
+      [-0.4222287, 116.9868249]
+    ]
+  },
+  {
+    name: "Jl. Danau Semayang",
+    activeDensity: "low",
+    point: "-0.4175367,116.9873386",
+    baseVol: 910,
+    coords: [
+      [-0.4222056, 116.9868258],
+      [-0.4208158, 116.9869891],
+      [-0.4203017, 116.9870698],
+      [-0.4192934, 116.9872022],
+      [-0.4189707, 116.9872359],
+      [-0.4183755, 116.9872525],
+      [-0.4180861, 116.9872873],
+      [-0.4178489, 116.9873042],
+      [-0.4175367, 116.9873386],
+      [-0.4170657, 116.9873881],
+      [-0.4167607, 116.9874194],
+      [-0.4163532, 116.9874581],
+      [-0.4158141, 116.9875111],
+      [-0.4154163, 116.9875485],
+      [-0.4152115, 116.9875673],
+      [-0.4145951, 116.9876046],
+      [-0.4145975, 116.9876046]
+    ]
+  },
+  {
+    name: "Jl. Maduningrat",
+    activeDensity: "low",
+    point: "-0.4163051,116.9859707",
+    baseVol: 400,
+    coords: [
+      [-0.4225301, 116.9855741],
+      [-0.4190332, 116.985789],
+      [-0.4179036, 116.9858677],
+      [-0.4174886, 116.9858969],
+      [-0.4171504, 116.9859025],
+      [-0.41673, 116.9859443],
+      [-0.4163051, 116.9859707],
+      [-0.4158111, 116.985999],
+      [-0.4150166, 116.9860634],
+      [-0.4146767, 116.9860889],
+      [-0.4146758, 116.9860889],
+      [-0.414675, 116.9860873],
+      [-0.414675, 116.9860873]
+    ]
+  },
+  {
+    name: "Jl. Kartini",
+    activeDensity: "low",
+    point: "-0.4162119,116.9823992",
+    baseVol: 720,
+    coords: [
+      [-0.4145759, 116.9876625],
+      [-0.4145665, 116.9873555],
+      [-0.414571, 116.9867516],
+      [-0.4145732, 116.9866752],
+      [-0.4145844, 116.9865813],
+      [-0.4145978, 116.9864806],
+      [-0.414628, 116.9862995],
+      [-0.4146627, 116.9860881],
+      [-0.4148733, 116.985254],
+      [-0.4150108, 116.9846612],
+      [-0.4150937, 116.9843263],
+      [-0.4151419, 116.9841853],
+      [-0.415206, 116.9840392],
+      [-0.4153245, 116.983829],
+      [-0.4154855, 116.9835606],
+      [-0.4157416, 116.9831628],
+      [-0.4159205, 116.9828508],
+      [-0.4162119, 116.9823992],
+      [-0.4166682, 116.9816478],
+      [-0.4169463, 116.9812041],
+      [-0.4169862, 116.9811271],
+      [-0.4170844, 116.980989],
+      [-0.4172724, 116.9807912],
+      [-0.4173426, 116.9807175],
+      [-0.4175644, 116.980583],
+      [-0.417688, 116.9805114],
+      [-0.4179139, 116.9804167],
+      [-0.4180015, 116.9803879],
+      [-0.4181297, 116.9803655],
+      [-0.4185898, 116.9802897],
+      [-0.4187545, 116.9802723],
+      [-0.4188797, 116.9802513],
+      [-0.4190186, 116.980256],
+      [-0.4192405, 116.9802493],
+      [-0.4194079, 116.9802353]
+    ]
+  },
+  {
+    name: "Jl. Mayjend Panjaitan",
+    activeDensity: "low",
+    point: "-0.4164265,116.9810839",
+    baseVol: 450,
+    coords: [
+      [-0.4140993, 116.9877345],
+      [-0.4141761, 116.986051],
+      [-0.4141845, 116.9859167],
+      [-0.4142271, 116.9855447],
+      [-0.4143415, 116.9849971],
+      [-0.4144311, 116.9846191],
+      [-0.4145243, 116.9842652],
+      [-0.4147986, 116.9836987],
+      [-0.4150583, 116.9832497],
+      [-0.4154143, 116.9826899],
+      [-0.4156817, 116.9822786],
+      [-0.4161662, 116.9814947],
+      [-0.4164265, 116.9810839],
+      [-0.416551, 116.9808572],
+      [-0.4166321, 116.9807272],
+      [-0.4167036, 116.9806411],
+      [-0.4168144, 116.980535],
+      [-0.4169738, 116.9804018],
+      [-0.4172987, 116.9801312],
+      [-0.4174313, 116.9800655],
+      [-0.4177466, 116.979961],
+      [-0.4179213, 116.9799147],
+      [-0.4182425, 116.9798724],
+      [-0.4186627, 116.9798453],
+      [-0.4192712, 116.9797602],
+      [-0.4192716, 116.9797565]
+    ]
+  },
+  {
+    name: "Jl. Mangkuraja",
+    activeDensity: "low",
+    point: "-0.4259493,116.9741737",
+    baseVol: 480,
+    coords: [
+      [-0.4193282, 116.9797407],
+      [-0.4197658, 116.9795805],
+      [-0.4202801, 116.9793569],
+      [-0.4205416, 116.9791964],
+      [-0.4206448, 116.9791066],
+      [-0.4207627, 116.978981],
+      [-0.4211675, 116.9784833],
+      [-0.4213883, 116.9783215],
+      [-0.42162, 116.9781856],
+      [-0.4218299, 116.9780585],
+      [-0.4222351, 116.9778911],
+      [-0.4228932, 116.9776835],
+      [-0.4244692, 116.9772239],
+      [-0.4247881, 116.9771373],
+      [-0.4252226, 116.9769027],
+      [-0.4252894, 116.9768308],
+      [-0.4253411, 116.9767175],
+      [-0.4254034, 116.975719],
+      [-0.4253966, 116.9751964],
+      [-0.42542, 116.9750915],
+      [-0.4254385, 116.9750078],
+      [-0.4254987, 116.9748662],
+      [-0.425597, 116.9746887],
+      [-0.4259493, 116.9741737],
+      [-0.4260274, 116.9740348],
+      [-0.426067, 116.973939],
+      [-0.4261199, 116.9735776],
+      [-0.4261514, 116.9733559],
+      [-0.4264639, 116.97202],
+      [-0.4265607, 116.9715274],
+      [-0.4265941, 116.9713121],
+      [-0.4266171, 116.9711677],
+      [-0.4267536, 116.9706493],
+      [-0.4269737, 116.9697951],
+      [-0.4271536, 116.9690355],
+      [-0.4277272, 116.9666549],
+      [-0.4279761, 116.9656441],
+      [-0.4281049, 116.9652089],
+      [-0.4282894, 116.9647163],
+      [-0.4282911, 116.9643223],
+      [-0.4282586, 116.9638825],
+      [-0.4282191, 116.9634276],
+      [-0.4281347, 116.9628989],
+      [-0.4279718, 116.9621821],
+      [-0.4279279, 116.9618513],
+      [-0.4278901, 116.9616965],
+      [-0.4278999, 116.9613814],
+      [-0.4279398, 116.9610251],
+      [-0.4281124, 116.9601209]
+    ]
+  }
+];
+
+    // 3. DATA SEKOLAH ZONA TENGGARONG
+    const schools = [
+  { lat: -0.4095480283463185,  lng: 116.98843168470431, name: "SMA Negeri 1 Tenggarong",       type: "SMA" },
+  { lat: -0.4481159227723063,  lng: 116.9923898246284,  name: "SMA Negeri 2 Tenggarong",       type: "SMA" },
+  { lat: -0.4119107273154106,  lng: 116.9848297912454,  name: "SMP Negeri 1 Tenggarong",       type: "SMP" },
+  { lat: -0.39148481364705995, lng: 116.98944862518435, name: "SMP Negeri 2 Tenggarong",       type: "SMP" },
+  { lat: -0.4225267288797779,  lng: 116.9818587251845,  name: "SMP Negeri 3 Tenggarong",       type: "SMP" },
+  { lat: -0.41051808549174484, lng: 116.98918864052669, name: "SD Negeri 001 Tenggarong",      type: "SD" },
+  { lat: -0.41196504500364917, lng: 116.98742620649273, name: "SD Negeri 002 Tenggarong",      type: "SD" },
+  { lat: -0.4424497995422881,  lng: 116.98820607590366, name: "SMA Muhammadiyah Tenggarong",   type: "SMA" },
+  { lat: -0.4328470430821364,  lng: 116.99317661169114, name: "MAN 2 KUKAR",                   type: "SMA" },
+  { lat: -0.4001440566635129,  lng: 116.98450853867773, name: "SMK Negeri 1 Tenggarong",       type: "SMK" },
+  { lat: -0.3990911852040621,  lng: 116.98447795586874, name: "SMK Negeri 2 Tenggarong",       type: "SMK" }
+];
+
+    let map, predMap;
+    let mapPolylines = [];
+    let predPolylines = [];
+    let predChart = null;
+    let radarChart = null;
+
+    // INISIALISASI SISTEM
+    window.onload = function() {
+        initDashboardMap();
+        initPredMap();
+        initClock();
+        initReports();
+        calculateRisk();
+        runPrediction();
+
+        // Panggil data live dari TomTom
+        fetchRealtimeTraffic();
+        // Refresh data TomTom otomatis setiap 2 menit (120000 ms)
+        setInterval(fetchRealtimeTraffic, 120000);
+    };
+
+    // PETA DASHBOARD MONITORING (TOMTOM INTEGRATED)
+    function initDashboardMap() {
+        map = L.map('map').setView([-0.415, 116.985], 14);
+
+        // Tile Map Utama TomTom
+        L.tileLayer(`https://{s}.api.tomtom.com/map/1/tile/basic/main/{z}/{x}/{y}.png?key=${TOMTOM_KEY}`, {
+            maxZoom: 19,
+            subdomains: ['a', 'b', 'c', 'd'],
+            attribution: '© TomTom'
+        }).addTo(map);
+
+        // Overlay Flow Traffic TomTom (Layer visual bawaan TomTom)
+        L.tileLayer(`https://{s}.api.tomtom.com/traffic/map/4/tile/flow/relative0/{z}/{x}/{y}.png?key=${TOMTOM_KEY}`, {
+            maxZoom: 19,
+            subdomains: ['a', 'b', 'c', 'd'],
+            opacity: 0.6
+        }).addTo(map);
+
+        // Menampilkan Marker Sekolah
+        if (typeof schools !== 'undefined') {
+            schools.forEach(s => {
+                const icon = L.divIcon({
+                    className: 'school-label',
+                    html: `<i class="fas fa-school"></i> ${s.name}`,
+                    iconSize: [120, 25]
+                });
+                L.marker([s.lat, s.lng], { icon: icon }).addTo(map);
+            });
+            document.getElementById('statSekolah').innerText = schools.length;
+        }
+    }
+
+    // FUNGSI UTAMA: MENEMBAK TOMTOM API & HITUNG KEPADATAN LIVE
+    async function fetchRealtimeTraffic() {
+        if (typeof roadSegments === 'undefined' || !TOMTOM_KEY || TOMTOM_KEY.includes("MASUKKAN_API_KEY")) {
+            console.warn("API Key TomTom belum dimasukkan dengan benar!");
+            return;
+        }
+
+        // Hapus garis lama di peta
+        mapPolylines.forEach(p => map.removeLayer(p));
+        mapPolylines = [];
+
+        let countTinggi = 0, countSedang = 0, countRendah = 0;
+
+        for (let road of roadSegments) {
+            try {
+                // Tembak TomTom Traffic Flow Segment API berdasarkan titik lokasi
+                let url = `https://api.tomtom.com/traffic/services/4/flowSegmentData/relative0/10/json?key=${TOMTOM_KEY}&point=${road.point}`;
+                let response = await fetch(url);
+                let data = await response.json();
+
+                if (data && data.flowSegmentData) {
+                    let currentSpeed = data.flowSegmentData.currentSpeed;   // Kecepatan riil saat ini (km/jam)
+                    let freeFlowSpeed = data.flowSegmentData.freeFlowSpeed; // Kecepatan normal/lancar
+
+                    // Rasio Kecepatan (currentSpeed / freeFlowSpeed)
+                    let ratio = currentSpeed / freeFlowSpeed;
+                    let color = '#22C55E'; // Hijau (Lancar)
+                    let status = 'LANCAR';
+
+                    // Logika Penentuan Kepadatan Real-Time
+                    if (ratio < 0.5) {
+                        color = '#EF4444'; // Merah (Macet)
+                        status = 'PADAT';
+                        countTinggi++;
+                    } else if (ratio < 0.8) {
+                        color = '#EAB308'; // Kuning (Sedang)
+                        status = 'SEDANG';
+                        countSedang++;
+                    } else {
+                        countRendah++;
+                    }
+
+                    // Gambar garis di peta sesuai status riil TomTom
+                    let polyline = L.polyline(road.coords, { color: color, weight: 7, opacity: 0.9 }).addTo(map);
+                    polyline.bindPopup(`
+                        <div style="font-family: monospace;">
+                            <b style="color: #FE7F2D;">${road.name}</b><br>
+                            Kecepatan Live: <b>${currentSpeed} km/jam</b><br>
+                            Kecepatan Normal: ${freeFlowSpeed} km/jam<br>
+                            Status: <b style="color:${color}">${status}</b>
+                        </div>
+                    `);
+                    mapPolylines.push(polyline);
+                }
+            } catch (err) {
+                console.error("Gagal mengambil data TomTom untuk " + road.name, err);
+            }
+        }
+
+        // Update Angka Statistik di Dashboard
+        document.getElementById('statTinggi').innerText = countTinggi;
+        document.getElementById('statSedang').innerText = countSedang;
+        document.getElementById('statRendah').innerText = countRendah;
+    }
+
+    // PETA PREDIKSI SIMULASI
+    function initPredMap() {
+        predMap = L.map('predMap').setView([-0.415, 116.985], 14);
+        L.tileLayer(`https://{s}.api.tomtom.com/map/1/tile/basic/main/{z}/{x}/{y}.png?key=${TOMTOM_KEY}`, {
+            maxZoom: 19,
+            subdomains: ['a', 'b', 'c', 'd'],
+            attribution: '© TomTom'
+        }).addTo(predMap);
+    }
+
+    // FUNGSI PREDIKSI ARUS (RULE-BASED SIMULATION)
+    function runPrediction() {
+        if (typeof roadSegments === 'undefined') return;
+
+        const t = document.getElementById('predTimeSelect').value;
+        const d = document.getElementById('predDayType').value;
+        const w = document.getElementById('predWeather').value;
+
+        let mult = 1.0;
+        if (t === 'morning' || t === 'afternoon') mult *= 1.4;
+        if (d === 'kerja') mult *= 1.2;
+        if (w === 'hujan') mult *= 1.15;
+        if (w === 'badai') mult *= 1.3;
+
+        let totalVol = 0;
+        let criticalCount = 0;
+        let tableHtml = '';
+        let chartLabels = [];
+        let chartData = [];
+
+        predPolylines.forEach(p => predMap.removeLayer(p));
+        predPolylines = [];
+
+        roadSegments.forEach(road => {
+            let calcVol = Math.round(road.baseVol * mult);
+            let spd = Math.max(10, Math.round(60 - (calcVol / 30)));
+            let color = calcVol > 1000 ? '#EF4444' : (calcVol > 700 ? '#EAB308' : '#22C55E');
+            let status = calcVol > 1000 ? 'PADAT' : (calcVol > 700 ? 'SEDANG' : 'LANCAR');
+
+            if(calcVol > 1000) criticalCount++;
+            totalVol += calcVol;
+
+            let polyline = L.polyline(road.coords, { color: color, weight: 6, opacity: 0.8 }).addTo(predMap);
+            polyline.bindPopup(`<b>${road.name}</b><br>Vol: ${calcVol} kend/jam<br>Kecepatan: ${spd} km/jam`);
+            predPolylines.push(polyline);
+
+            tableHtml += `<tr class="border-b border-gray-100"><td class="py-2">${road.name}</td><td class="text-right">${calcVol}</td><td class="text-right">${spd}</td><td class="text-right">${status}</td><td class="text-left font-bold" style="color:${color}">${status}</td></tr>`;
+            chartLabels.push(road.name);
+            chartData.push(calcVol);
+        });
+
+        let avgVol = Math.round(totalVol / roadSegments.length);
+        let avgSpd = Math.max(15, Math.round(60 - (avgVol / 30)));
+
+        document.getElementById('predAvgVol').innerText = avgVol;
+        document.getElementById('predAvgSpd').innerText = avgSpd;
+        document.getElementById('predCritical').innerText = criticalCount;
+        document.getElementById('predTable').innerHTML = tableHtml;
+
+        let levelElem = document.getElementById('predDensityLevel');
+        if(avgVol > 900) { levelElem.innerText = 'TINGGI'; levelElem.style.color = '#EF4444'; }
+        else if(avgVol > 650) { levelElem.innerText = 'SEDANG'; levelElem.style.color = '#EAB308'; }
+        else { levelElem.innerText = 'RENDAH'; levelElem.style.color = '#22C55E'; }
+
+        document.getElementById('predDominant').innerText = (t === 'morning' || t === 'midday') ? "Pusat Kota / Sekolah" : "Pemukiman";
+
+        updateChart(chartLabels, chartData);
+    }
+
+    function updateChart(labels, data) {
+        const ctx = document.getElementById('predBarChart').getContext('2d');
+        if(predChart) predChart.destroy();
+        predChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Volume Kendaraan',
+                    data: data,
+                    backgroundColor: '#FE7F2D'
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    }
+
+    // FUNGSI SIMULASI RISIKO
+    function calculateRisk() {
+        const rambu = parseInt(document.getElementById('paramRambu').value);
+        const jalan = parseInt(document.getElementById('paramJalan').value);
+        const cahaya = parseInt(document.getElementById('paramCahaya').value);
+        const pedestrian = parseInt(document.getElementById('paramPedestrian').value);
+        const zebra = parseInt(document.getElementById('paramZebra').value);
+        const kecepatan = parseInt(document.getElementById('paramKecepatan').value);
+
+        let total = Math.min(100, Math.round((rambu + jalan + cahaya + pedestrian + zebra + kecepatan) / 3.3));
+
+        let circle = document.getElementById('riskCircle');
+        let fill = document.getElementById('riskBarFill');
+        let label = document.getElementById('riskLabel');
+        let percent = document.getElementById('riskPercent');
+
+        percent.innerText = total + '%';
+        fill.style.width = total + '%';
+
+        let color = '#22C55E';
+        let txt = 'SANGAT AMAN';
+
+        if(total > 70) { color = '#EF4444'; txt = 'BAHAYA TINGGI'; }
+        else if(total > 40) { color = '#EAB308'; txt = 'RISIKO SEDANG'; }
+
+        circle.style.borderColor = color;
+        percent.style.color = color;
+        label.innerText = txt;
+        label.style.color = color;
+        fill.style.background = color;
+
+        updateRadar([rambu, jalan, cahaya, pedestrian, zebra, kecepatan]);
+    }
+
+    function updateRadar(data) {
+        const ctx = document.getElementById('riskRadar').getContext('2d');
+        if(radarChart) radarChart.destroy();
+        radarChart = new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['Rambu', 'Jalan', 'Cahaya', 'Pedestrian', 'Zebra Cross', 'Kecepatan'],
+                datasets: [{
+                    label: 'Faktor Risiko',
+                    data: data,
+                    backgroundColor: 'rgba(254, 127, 45, 0.2)',
+                    borderColor: '#FE7F2D'
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    }
+
+    // NAVIGASI APLIKASI
+    function switchPage(pageId) {
+        document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-link, .mobile-nav-panel a').forEach(a => a.classList.remove('active'));
+
+        document.getElementById(`page-${pageId}`).classList.add('active');
+        document.querySelectorAll(`[data-page="${pageId}"]`).forEach(a => a.classList.add('active'));
+
+        closeMobileNav();
+
+        setTimeout(() => {
+            if(pageId === 'dashboard' && map) map.invalidateSize();
+            if(pageId === 'prediksi' && predMap) predMap.invalidateSize();
+        }, 200);
+    }
+
+    function openMobileNav() {
+        document.getElementById('mobileNavPanel').classList.add('open');
+        document.getElementById('mobileNavOverlay').classList.add('show');
+    }
+
+    function closeMobileNav() {
+        document.getElementById('mobileNavPanel').classList.remove('open');
+        document.getElementById('mobileNavOverlay').classList.remove('show');
+    }
+
+    function initClock() {
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('liveClock').innerText = now.toLocaleTimeString('id-ID');
+            const hrs = now.getHours();
+            let status = "NORMAL";
+            if(hrs >= 6 && hrs <= 8) status = "PUNCAK PAGI";
+            else if(hrs >= 12 && hrs <= 13) status = "SIANG/ISTIRAHAT";
+            else if(hrs >= 15 && hrs <= 17) status = "PUNCAK SORE";
+            document.getElementById('activeTimeLabelNav').innerText = status;
+        }, 1000);
+    }
+
+    function initReports() {
+        const reports = [
+            { id: "REP-001", loc: "Jl. KH. Akhmad Mukhsin", type: "Rambu Rusak", status: "Proses", date: "2026-03-28" },
+            { id: "REP-002", loc: "Jl. Mulawarman", type: "Jalan Berlubang", status: "Selesai", date: "2026-03-25" }
+        ];
+        let html = '';
+        reports.forEach(r => {
+            html += `<tr class="border-b border-gray-200"><td class="py-2">${r.id}</td><td>${r.loc}</td><td>${r.type}</td><td class="font-bold text-so">${r.status}</td><td>${r.date}</td></tr>`;
+        });
+        document.getElementById('reportTable').innerHTML = html;
+    }
+</script>
+</body>
+</html>
