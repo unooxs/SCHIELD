@@ -401,187 +401,14 @@
 <script>
     // 1. MASUKKAN API KEY TOMTOM KAMU DI SINI
     const TOMTOM_KEY = 'mMuqYWuxqR6vcU038gZbTGAQjWHPTRBP';
-const roadSegments = [
-  // --- JALAN BESAR / UTAMA (2 RUAS TERPISAH) ---
-  {
-    name: "Jl. Jend. Sudirman",
-    activeDensity: "high",
-    point: "-0.4165841,116.991037",
-    baseVol: 3200, // Hasil hitungan: 246-300 kend / 5 menit
-    coords: [
-      [-0.415467, 116.9904213],
-      [-0.4155615, 116.9905258],
-      [-0.4165841, 116.991037],
-      [-0.4173465, 116.9913409],
-      [-0.419204, 116.9917667]
-    ]
-  },
-  {
-    name: "Jl. KH Ahmad Muksin",
-    activeDensity: "high",
-    point: "-0.4295151,116.9946992",
-    baseVol: 3000, // Hasil hitungan: 246-300 kend / 5 menit
-    coords: [
-      [-0.4191747, 116.9917483],
-      [-0.4220813, 116.992304],
-      [-0.4234132, 116.9926301],
-      [-0.4238916, 116.9928921],
-      [-0.4247225, 116.9934023],
-      [-0.428691, 116.9944676],
-      [-0.4295151, 116.9946992],
-      [-0.4327229, 116.9957609],
-      [-0.4358612, 116.9968732],
-      [-0.4377994, 116.997738]
-    ]
-  },
-  {
-    name: "Jl. Jend. Ahmad Yani",
-    activeDensity: "high",
-    point: "-0.4170,116.9886",
-    baseVol: 3100, // Hasil hitungan: 246-300 kend / 5 menit
-    coords: [
-      [-0.4203212, 116.9886192],
-      [-0.4165855, 116.9885364],
-      [-0.4163954, 116.9885563],
-      [-0.4157254, 116.9885575],
-      [-0.4146527, 116.9885089]
-    ]
-  },
 
-  // --- JALAN SEMPIT (SERING PADAT) ---
-  {
-    name: "Jl. Danau Aji",
-    activeDensity: "medium",
-    point: "-0.4227061,116.9850019",
-    baseVol: 1050,
-    coords: [
-      [-0.4232692, 116.98296],
-      [-0.4232194, 116.9831895],
-      [-0.4229707, 116.9840594],
-      [-0.4227061, 116.9850019],
-      [-0.422468, 116.9859437],
-      [-0.4222287, 116.9868249]
-    ]
-  },
-  {
-    name: "Jl. Maduningrat",
-    activeDensity: "medium",
-    point: "-0.4163051,116.9859707",
-    baseVol: 980,
-    coords: [
-      [-0.4225301, 116.9855741],
-      [-0.4190332, 116.985789],
-      [-0.4179036, 116.9858677],
-      [-0.4163051, 116.9859707],
-      [-0.4150166, 116.9860634],
-      [-0.414675, 116.9860873]
-    ]
-  },
-  {
-    name: "Jl. Danau Semayang",
-    activeDensity: "medium",
-    point: "-0.4175367,116.9873386",
-    baseVol: 1100,
-    coords: [
-      [-0.4222056, 116.9868258],
-      [-0.4208158, 116.9869891],
-      [-0.4192934, 116.9872022],
-      [-0.4175367, 116.9873386],
-      [-0.4158141, 116.9875111],
-      [-0.4145975, 116.9876046]
-    ]
-  },
-  {
-    name: "Jl. Mangkuraja",
-    activeDensity: "medium",
-    point: "-0.4259493,116.9741737",
-    baseVol: 950,
-    coords: [
-      [-0.4193282, 116.9797407],
-      [-0.4211675, 116.9784833],
-      [-0.4244692, 116.9772239],
-      [-0.4259493, 116.9741737],
-      [-0.4269737, 116.9697951],
-      [-0.4281124, 116.9601209]
-    ]
-  },
-  {
-    name: "Jl. Mayjend Panjaitan",
-    activeDensity: "medium",
-    point: "-0.4164265,116.9810839",
-    baseVol: 920,
-    coords: [
-      [-0.4140993, 116.9877345],
-      [-0.4143415, 116.9849971],
-      [-0.4154143, 116.9826899],
-      [-0.4164265, 116.9810839],
-      [-0.4174313, 116.9800655],
-      [-0.4192716, 116.9797565]
-    ]
-  },
-  {
-    name: "Jl. Kartini",
-    activeDensity: "medium",
-    point: "-0.4162119,116.9823992",
-    baseVol: 1000,
-    coords: [
-      [-0.4145759, 116.9876625],
-      [-0.4148733, 116.985254],
-      [-0.4154855, 116.9835606],
-      [-0.4162119, 116.9823992],
-      [-0.4172724, 116.9807912],
-      [-0.4194079, 116.9802353]
-    ]
-  },
-
-  // --- JALAN LEBAR (CENDERUNG LANCAR) ---
-  {
-    name: "Jl. Mulawarman",
-    activeDensity: "low",
-    point: "-0.4103498,116.9884807",
-    baseVol: 520,
-    coords: [
-      [-0.4128112, 116.9884744],
-      [-0.4114345, 116.988475],
-      [-0.4109647, 116.9884621],
-      [-0.4103498, 116.9884807],
-      [-0.4092833, 116.9884374],
-      [-0.409275, 116.988437]
-    ]
-  },
-  {
-    name: "Jl. KH Dewantara",
-    activeDensity: "low",
-    point: "-0.4116662,116.9855835",
-    baseVol: 480,
-    coords: [
-      [-0.4128334, 116.9884642],
-      [-0.4120985, 116.9866337],
-      [-0.4116662, 116.9855835],
-      [-0.406899, 116.9831226]
-    ]
-  },
-  {
-    name: "Jl. KH Ahmad Dahlan",
-    activeDensity: "low",
-    point: "-0.4033288,116.9847276",
-    baseVol: 600,
-    coords: [
-      [-0.4085803, 116.9843035],
-      [-0.4064626, 116.9847066],
-      [-0.4033288, 116.9847276],
-      [-0.3993627, 116.9846581],
-      [-0.3931118, 116.9848414]
-    ]
-  }
-];
     // 2. DATA RUAS JALAN (Lengkap dengan koordinat & titik acuan 'point' untuk TomTom API)
    const roadSegments = [
   {
     name: "Jl. Mulawarman",
     activeDensity: "low",
     point: "-0.4103498,116.9884807",
-    baseVol: 820,
+    baseVol: 420,
     coords: [
       [-0.4128112, 116.9884744],
       [-0.4114345, 116.988475],
@@ -593,7 +420,7 @@ const roadSegments = [
   },
   {
     name: "Jl. Jend. Sudirman",
-    activeDensity: "low",
+    activeDensity: "high",
     point: "-0.4165841,116.991037",
     baseVol: 950,
     coords: [
@@ -608,7 +435,7 @@ const roadSegments = [
     name: "Jl. KH Dewantara",
     activeDensity: "low",
     point: "-0.4116662,116.9855835",
-    baseVol: 550,
+    baseVol: 380,
     coords: [
       [-0.4128334, 116.9884642],
       [-0.412656, 116.9879458],
@@ -620,9 +447,9 @@ const roadSegments = [
   },
   {
     name: "Jl. KH Ahmad Muksin",
-    activeDensity: "low",
+    activeDensity: "high",
     point: "-0.4295151,116.9946992",
-    baseVol: 680,
+    baseVol: 900,
     coords: [
       [-0.4191747, 116.9917483],
       [-0.4220813, 116.992304],
@@ -650,51 +477,51 @@ const roadSegments = [
     point: "-0.4122,116.9911",
     baseVol: 520,
     coords: [
-  [-0.4149031, 116.9912432],
-  [-0.4148357, 116.9912867],
-  [-0.4147328, 116.991297],
-  [-0.4146135, 116.9912535],
-  [-0.4141014, 116.9912192],
-  [-0.4138079, 116.9912015],
-  [-0.4136748, 116.9911845],
-  [-0.4134386, 116.9911622],
-  [-0.4132357, 116.9911382],
-  [-0.4129189, 116.9910935],
-  [-0.4125926, 116.9910592],
-  [-0.412184, 116.9909882],
-  [-0.4118444, 116.9909339],
-  [-0.4113777, 116.9908582],
-  [-0.4109079, 116.9907842],
-  [-0.410544, 116.9907271],
-  [-0.4101726, 116.9906712],
-  [-0.4098199, 116.9906192],
-  [-0.4094915, 116.9905719],
-  [-0.4092497, 116.9905393],
-  [-0.409146, 116.9905194]
-]
+      [-0.4149031, 116.9912432],
+      [-0.4148357, 116.9912867],
+      [-0.4147328, 116.991297],
+      [-0.4146135, 116.9912535],
+      [-0.4141014, 116.9912192],
+      [-0.4138079, 116.9912015],
+      [-0.4136748, 116.9911845],
+      [-0.4134386, 116.9911622],
+      [-0.4132357, 116.9911382],
+      [-0.4129189, 116.9910935],
+      [-0.4125926, 116.9910592],
+      [-0.412184, 116.9909882],
+      [-0.4118444, 116.9909339],
+      [-0.4113777, 116.9908582],
+      [-0.4109079, 116.9907842],
+      [-0.410544, 116.9907271],
+      [-0.4101726, 116.9906712],
+      [-0.4098199, 116.9906192],
+      [-0.4094915, 116.9905719],
+      [-0.4092497, 116.9905393],
+      [-0.409146, 116.9905194]
+    ]
   },
   {
     name: "Jl. Jend. Ahmad Yani",
     activeDensity: "low",
     point: "-0.4170,116.9886",
-    baseVol: 870,
+    baseVol: 920,
     coords: [
-  [-0.4203212, 116.9886192],
-  [-0.4165855, 116.9885364],
-  [-0.4163954, 116.9885563],
-  [-0.4161638, 116.9885552],
-  [-0.4157254, 116.9885575],
-  [-0.4152925, 116.988545],
-  [-0.4150703, 116.9885321],
-  [-0.4148139, 116.9885233],
-  [-0.4146527, 116.9885089]
-]
+      [-0.4203212, 116.9886192],
+      [-0.4165855, 116.9885364],
+      [-0.4163954, 116.9885563],
+      [-0.4161638, 116.9885552],
+      [-0.4157254, 116.9885575],
+      [-0.4152925, 116.988545],
+      [-0.4150703, 116.9885321],
+      [-0.4148139, 116.9885233],
+      [-0.4146527, 116.9885089]
+    ]
   },
   {
     name: "Jl. Pesut",
-    activeDensity: "low",
+    activeDensity: "high",
     point: "-0.4313243,116.984948",
-    baseVol: 680,
+    baseVol: 750,
     coords: [
       [-0.4233173, 116.982942],
       [-0.4237121, 116.9833994],
@@ -746,7 +573,7 @@ const roadSegments = [
     name: "Jl. KH Ahmad Dahlan",
     activeDensity: "low",
     point: "-0.4033288,116.9847276",
-    baseVol: 780,
+    baseVol: 450,
     coords: [
       [-0.4085803, 116.9843035],
       [-0.4085358, 116.9843129],
@@ -789,9 +616,9 @@ const roadSegments = [
   },
   {
     name: "Jl. Danau Aji",
-    activeDensity: "low",
+    activeDensity: "medium",
     point: "-0.4227061,116.9850019",
-    baseVol: 350,
+    baseVol: 720,
     coords: [
       [-0.4232692, 116.98296],
       [-0.4232194, 116.9831895],
@@ -803,9 +630,9 @@ const roadSegments = [
   },
   {
     name: "Jl. Danau Semayang",
-    activeDensity: "low",
+    activeDensity: "medium",
     point: "-0.4175367,116.9873386",
-    baseVol: 910,
+    baseVol: 750,
     coords: [
       [-0.4222056, 116.9868258],
       [-0.4208158, 116.9869891],
@@ -828,9 +655,9 @@ const roadSegments = [
   },
   {
     name: "Jl. Maduningrat",
-    activeDensity: "low",
+    activeDensity: "medium",
     point: "-0.4163051,116.9859707",
-    baseVol: 400,
+    baseVol: 700,
     coords: [
       [-0.4225301, 116.9855741],
       [-0.4190332, 116.985789],
@@ -849,9 +676,9 @@ const roadSegments = [
   },
   {
     name: "Jl. Kartini",
-    activeDensity: "low",
+    activeDensity: "medium",
     point: "-0.4162119,116.9823992",
-    baseVol: 720,
+    baseVol: 710,
     coords: [
       [-0.4145759, 116.9876625],
       [-0.4145665, 116.9873555],
@@ -892,9 +719,9 @@ const roadSegments = [
   },
   {
     name: "Jl. Mayjend Panjaitan",
-    activeDensity: "low",
+    activeDensity: "medium",
     point: "-0.4164265,116.9810839",
-    baseVol: 450,
+    baseVol: 690,
     coords: [
       [-0.4140993, 116.9877345],
       [-0.4141761, 116.986051],
@@ -926,9 +753,9 @@ const roadSegments = [
   },
   {
     name: "Jl. Mangkuraja",
-    activeDensity: "low",
+    activeDensity: "medium",
     point: "-0.4259493,116.9741737",
-    baseVol: 480,
+    baseVol: 680,
     coords: [
       [-0.4193282, 116.9797407],
       [-0.4197658, 116.9795805],
@@ -982,7 +809,7 @@ const roadSegments = [
     ]
   }
 ];
-
+     
     // 3. DATA SEKOLAH ZONA TENGGARONG
     const schools = [
   { lat: -0.4095480283463185,  lng: 116.98843168470431, name: "SMA Negeri 1 Tenggarong",       type: "SMA" },
@@ -1077,18 +904,22 @@ const roadSegments = [
 
                     // Rasio Kecepatan (currentSpeed / freeFlowSpeed)
                     let ratio = currentSpeed / freeFlowSpeed;
-                   let color = '#22C55E';
+                    let color = '#22C55E'; // Hijau (Lancar)
                     let status = 'LANCAR';
+
                     // Logika Penentuan Kepadatan Real-Time
-                   if (calcVol > 3600 || (calcVol > 1200 && road.baseVol < 1000)) {
-            color = '#EF4444'; 
-            status = 'PADAT';
-            criticalCount++;
-        }
-                   else if (calcVol > 2200 || (calcVol > 800 && road.baseVol < 1000)) {
-            color = '#EAB308';
-            status = 'SEDANG'; 
-                   }
+                    if (ratio < 0.5) {
+                        color = '#EF4444'; // Merah (Macet)
+                        status = 'PADAT';
+                        countTinggi++;
+                    } else if (ratio < 0.8) {
+                        color = '#EAB308'; // Kuning (Sedang)
+                        status = 'SEDANG';
+                        countSedang++;
+                    } else {
+                        countRendah++;
+                    }
+
                     // Gambar garis di peta sesuai status riil TomTom
                     let polyline = L.polyline(road.coords, { color: color, weight: 7, opacity: 0.9 }).addTo(map);
                     polyline.bindPopup(`
@@ -1123,18 +954,25 @@ const roadSegments = [
     }
 
     // FUNGSI PREDIKSI ARUS (RULE-BASED SIMULATION)
-   function runPrediction() {
+function runPrediction() {
     if (typeof roadSegments === 'undefined') return;
 
+    // 1. AMBIL PARAMETER INPUT DARI DROPDOWN
     const t = document.getElementById('predTimeSelect').value;
     const d = document.getElementById('predDayType').value;
     const w = document.getElementById('predWeather').value;
 
+    // 2. HITUNG MULTIPLIER (FAKTOR PENGALIK)
     let mult = 1.0;
-    if (t === 'morning' || t === 'afternoon') mult *= 1.35;
-    if (d === 'kerja') mult *= 1.2;
-    if (w === 'hujan') mult *= 1.15;
-    if (w === 'badai') mult *= 1.25;
+
+    // Faktor Jam & Hari (Pengaruh Utama Kepadatan)
+    if (t === 'morning' || t === 'afternoon') mult *= 1.25;
+    if (t === 'midday') mult *= 1.08;
+    if (d === 'kerja') mult *= 1.1;
+
+    // Faktor Cuaca Disesuaikan (Hujan di Tenggarong tidak bikin penumpukan ekstrem)
+    if (w === 'hujan') mult *= 1.02; // Hanya naik 2% (kendaraan cenderung menepi/turun)
+    if (w === 'badai') mult *= 1.05; // Hanya naik 5%
 
     let totalVol = 0;
     let criticalCount = 0;
@@ -1142,42 +980,58 @@ const roadSegments = [
     let chartLabels = [];
     let chartData = [];
 
+    // Hapus garis lama di peta prediksi
     predPolylines.forEach(p => predMap.removeLayer(p));
     predPolylines = [];
 
+    // AMBANG BATAS KAPASITAS TIAP JALAN SEMPIT
+    const roadLimits = {
+        "Jl. Danau Aji": 920,
+        "Jl. Danau Semayang": 950,
+        "Jl. Kartini": 980,
+        "Jl. Maduningrat": 930,
+        "Jl. Mayjend Panjaitan": 1000,
+        "Jl. Mangkuraja": 890
+    };
+
+    // 3. PERULANGAN SETIAP RUAS JALAN
     roadSegments.forEach(road => {
         let calcVol = Math.round(road.baseVol * mult);
         
-        // Logika hitung kecepatan berdasarkan volume
-        let spd = Math.max(12, Math.round(55 - (calcVol / 80)));
-        
-        // Penyesuaian ambang batas kepadatan (Macet / Sedang / Lancar)
-        let color = '#22C55E';
+        let color = '#22C55E'; // Default Hijau (Lancar)
         let status = 'LANCAR';
+        let spd = 42;
 
-        if (calcVol > 2000 || (calcVol > 900 && road.baseVol < 1500)) {
-            // Jalan besar volume >2000 ATAU jalan sempit volume >900
-            color = '#EF4444'; 
+        let limit = roadLimits[road.name] || 1300;
+
+        // Penentuan warna yang lebih ramah/ringan saat hujan
+        if (calcVol >= limit + 300) {
+            color = '#EF4444';
             status = 'PADAT';
+            spd = 22;
             criticalCount++;
-        } else if (calcVol > 1200 || (calcVol > 700 && road.baseVol < 1500)) {
-            color = '#EAB308';
+        } else if (calcVol >= limit) {
+            color = '#EAB308'; // Kuning (Sedang)
             status = 'SEDANG';
+            spd = 32;
         }
 
         totalVol += calcVol;
 
+        // Gambar garis di Peta Prediksi
         let polyline = L.polyline(road.coords, { color: color, weight: 6, opacity: 0.8 }).addTo(predMap);
         polyline.bindPopup(`<b>${road.name}</b><br>Vol: ${calcVol} kend/jam<br>Kecepatan: ${spd} km/jam`);
         predPolylines.push(polyline);
 
+        // Buat baris tabel detail
         tableHtml += `<tr class="border-b border-gray-100"><td class="py-2">${road.name}</td><td class="text-right">${calcVol}</td><td class="text-right">${spd} km/h</td><td class="text-right">${status}</td><td class="text-left font-bold pl-2" style="color:${color}">${status}</td></tr>`;
         chartLabels.push(road.name);
         chartData.push(calcVol);
     });
 
+    // 4. UPDATE RINGKASAN ANGKA DAN GRAFIK
     let avgVol = Math.round(totalVol / roadSegments.length);
-    let avgSpd = Math.max(15, Math.round(55 - (avgVol / 80)));
+    let avgSpd = 38;
 
     document.getElementById('predAvgVol').innerText = avgVol;
     document.getElementById('predAvgSpd').innerText = avgSpd;
@@ -1185,14 +1039,37 @@ const roadSegments = [
     document.getElementById('predTable').innerHTML = tableHtml;
 
     let levelElem = document.getElementById('predDensityLevel');
-    if(avgVol > 1800) { levelElem.innerText = 'TINGGI'; levelElem.style.color = '#EF4444'; }
-    else if(avgVol > 1000) { levelElem.innerText = 'SEDANG'; levelElem.style.color = '#EAB308'; }
-    else { levelElem.innerText = 'RENDAH'; levelElem.style.color = '#22C55E'; }
+    if (criticalCount > 0) {
+        levelElem.innerText = 'TINGGI';
+        levelElem.style.color = '#EF4444';
+    } else if (avgVol > 800) { 
+        levelElem.innerText = 'SEDANG'; 
+        levelElem.style.color = '#EAB308'; 
+    } else { 
+        levelElem.innerText = 'RENDAH'; 
+        levelElem.style.color = '#22C55E'; 
+    }
 
     document.getElementById('predDominant').innerText = (t === 'morning' || t === 'midday') ? "Pusat Kota / Sekolah" : "Pemukiman";
 
     updateChart(chartLabels, chartData);
 }
+    function updateChart(labels, data) {
+        const ctx = document.getElementById('predBarChart').getContext('2d');
+        if(predChart) predChart.destroy();
+        predChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Volume Kendaraan',
+                    data: data,
+                    backgroundColor: '#FE7F2D'
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    }
 
     // FUNGSI SIMULASI RISIKO
     function calculateRisk() {
